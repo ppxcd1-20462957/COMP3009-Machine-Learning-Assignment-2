@@ -14,7 +14,7 @@ from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.model_selection import (GridSearchCV, KFold, StratifiedKFold,
                                      cross_validate, train_test_split)
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import RobustScaler, StandardScaler
 from sklearn.svm import SVC, SVR
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
@@ -31,14 +31,9 @@ class Preprocess:
         self.X_train_PCR, self.X_test_PCR, self.Y_train_PCR, self.Y_test_PCR = train_test_split(X_norm, Y_PCR, test_size = 0.2, random_state = 42)
         self.X_train_RFS, self.X_test_RFS, self.Y_train_RFS, self.Y_test_RFS = train_test_split(X_norm, Y_RFS, test_size = 0.2, random_state = 42)
         
-        #X_norm[(np.abs(stats.zscore(X_norm)) < 2).all(axis = 1)] #keep vals within n standard deviations to mean to treat outliers on top of minmax??
-
-        #for col in X_norm:
-            #plt.boxplot(col)
-            #plt.show()
-
     def data_cleaning_remove(self, data):
         data['pCR (outcome)'] = data['pCR (outcome)'].replace(999, np.nan)
+        data['RelapseFreeSurvival (outcome)'] = data['RelapseFreeSurvival (outcome)'].replace(999, np.nan)
         data = data.dropna()
 
         return data
@@ -69,14 +64,17 @@ class Preprocess:
         return X, Y_PCR, Y_RFS
 
     def feature_selection(self, X):
+        data_copy = X.columns
         corr_matrix = X.corr().abs()
         upper_tri = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k = 1).astype(bool))
         to_drop = [column for column in upper_tri.columns if any(upper_tri[column] > 0.95)]
         X.drop(columns = to_drop, axis = 1,inplace = True)
 
-        sel = VarianceThreshold(threshold = (0.95 * (1 - 0.95)))
-        X = sel.fit_transform(X)
-        #json.dump(X.feature_names_in_, open('D:/OneDrive/Academia/MSc Machine Learning in Science/Modules/COMP3009 Machine Learning/Submissions/Assignment 2/retained_features.json', 'wb'))
+        selector = VarianceThreshold(threshold = (0.95 * (1 - 0.95)))
+        X = selector.fit_transform(X)
+        features = selector.get_support(indices = True)
+        features = [column for column in data_copy[features]]
+        json.dump(features, open('D:/OneDrive/Academia/MSc Machine Learning in Science/Modules/COMP3009 Machine Learning/Submissions/Assignment 2/retained_features.json', 'w'))
         
         return X
 
@@ -93,7 +91,7 @@ class Preprocess:
         return X_norm
 
     def normalisation_minmax(self, X):
-        scaler = MinMaxScaler()
+        scaler = RobustScaler()
         X_norm = scaler.fit_transform(X)
 
         return X_norm
