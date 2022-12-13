@@ -7,6 +7,7 @@ from joblib import dump
 from keras import layers, models
 from matplotlib import pyplot as plt
 from scipy import stats
+from sklearn import metrics
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.feature_selection import VarianceThreshold
@@ -92,7 +93,9 @@ class Preprocess:
 
     def normalisation_minmax(self, X):
         scaler = RobustScaler()
-        X_norm = scaler.fit_transform(X)
+        scaler.fit(X)
+        X_norm = scaler.transform(X)
+        dump(scaler, open('D:/OneDrive/Academia/MSc Machine Learning in Science/Modules/COMP3009 Machine Learning/Submissions/Assignment 2/scaler.joblib', 'wb'))
 
         return X_norm
 
@@ -169,9 +172,21 @@ class Classification_SVM:
         )
 
         scores = cross_validate(model, inputs, targets, cv = 5, scoring = 'accuracy', return_train_score = True)
-        model.fit(inputs, targets)
+        predictions = model.fit(inputs, targets)
         dump(model, open('D:/OneDrive/Academia/MSc Machine Learning in Science/Modules/COMP3009 Machine Learning/Submissions/Assignment 2/classifier.joblib', 'wb')) #MinMax, replace NaN with median
-        
+
+        #predictions = model.predict(input) --------------------------------> how to use on unseen data??
+        #fpr, tpr, thresholds = metrics.auc_curve(targets, predictions)
+        #roc_auc = metrics.auc(fpr, tpr)
+        #display = metrics.RocCurveDisplay(fpr, tpr, roc_auc)
+        #display.plot()
+        #plt.show()
+
+        #conf_matrix = metrics.confusion_matrix(targets, predictions, labels = model.classes_) ----------------------> perhaps needs to go in testing files??
+        #display = metrics.ConfusionMatrixDisplay(confusion_matrix = conf_matrix, display_labels = model.classes_)
+        #display.plot()
+        #plt.show()
+
         return 'Training Accuracy: {}%, 5-Fold Cross-Validation Accuracy: {}%'.format(round(np.mean(scores['train_score']) * 100, 2), round(np.mean(scores['test_score']) * 100, 2))
 
 class Classification_LogisticRegression:
@@ -236,7 +251,7 @@ class Run_Classification:
     def __init__(self):
         dataset = pd.read_excel('D:/OneDrive/Academia/MSc Machine Learning in Science/Modules/COMP3009 Machine Learning/Submissions/Assignment 2/trainDataset.xls')
         data = Preprocess(dataset)
-        ann = Classification_NeuralNetwork(data.X_train_PCR, data.X_test_PCR, data.Y_train_PCR, data.Y_test_PCR)
+        #ann = Classification_NeuralNetwork(data.X_train_PCR, data.X_test_PCR, data.Y_train_PCR, data.Y_test_PCR)
         xgb = Classification_XGBoost(data.X_train_PCR, data.X_test_PCR, data.Y_train_PCR, data.Y_test_PCR)
         svm = Classification_SVM(data.X_train_PCR, data.X_test_PCR, data.Y_train_PCR, data.Y_test_PCR)
         lr = Classification_LogisticRegression(data.X_train_PCR, data.X_test_PCR, data.Y_train_PCR, data.Y_test_PCR)
@@ -244,7 +259,7 @@ class Run_Classification:
         dt = Classification_DecisionTree(data.X_train_PCR, data.X_test_PCR, data.Y_train_PCR, data.Y_test_PCR)
         rf = Classification_RandomForest(data.X_train_PCR, data.X_test_PCR, data.Y_train_PCR, data.Y_test_PCR)
 
-        print('\nClassification: Neural Network ', ann.accuracy)
+        #print('\nClassification: Neural Network ', ann.accuracy)
         print('\nClassification: XGBoost ', xgb.accuracy)
         print('Classification: SVC ', svm.accuracy)
         print('Classification: Logistic Regression ', lr.accuracy)
@@ -405,7 +420,7 @@ class Run_Regression:
     def __init__(self):
         dataset = pd.read_excel('D:/OneDrive/Academia/MSc Machine Learning in Science/Modules/COMP3009 Machine Learning/Submissions/Assignment 2/trainDataset.xls')
         data = Preprocess(dataset)
-        ann = Regression_NeuralNetwork(data.X_train_RFS, data.X_test_RFS, data.Y_train_RFS, data.Y_test_RFS)
+        #ann = Regression_NeuralNetwork(data.X_train_RFS, data.X_test_RFS, data.Y_train_RFS, data.Y_test_RFS)
         xgb = Regression_XGBoost(data.X_train_RFS, data.X_test_RFS, data.Y_train_RFS, data.Y_test_RFS)
         svm = Regression_SVM(data.X_train_PCR, data.X_test_RFS, data.Y_train_RFS, data.Y_test_RFS)
         lr = Regression_LinearRegression(data.X_train_RFS, data.X_test_RFS, data.Y_train_RFS, data.Y_test_RFS)
@@ -413,7 +428,7 @@ class Run_Regression:
         dt = Regression_DecisionTree(data.X_train_RFS, data.X_test_RFS, data.Y_train_RFS, data.Y_test_RFS)
         rf = Regression_RandomForest(data.X_train_RFS, data.X_test_RFS, data.Y_train_RFS, data.Y_test_RFS)
 
-        print('\nRegression: Neural Network ', ann.accuracy)
+        #print('\nRegression: Neural Network ', ann.accuracy)
         print('\nRegression: XGBoost ', xgb.accuracy)
         print('Regression: SVR ', svm.accuracy)
         print('Regression: Linear Regression ', lr.accuracy)

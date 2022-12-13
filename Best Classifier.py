@@ -1,5 +1,5 @@
 import json
-
+from joblib import load
 import numpy as np
 import pandas as pd
 from joblib import load
@@ -25,8 +25,9 @@ class Classifier_Test:
             data[col_list[i]].replace(to_replace = 999, value = data[col_list[i]].mean(), inplace = True)
 
         #minmax normalisation
-        scaler = MinMaxScaler()
-        X_norm = scaler.fit_transform(X)
+        #scaler = MinMaxScaler()
+        scaler = load('D:/OneDrive/Academia/MSc Machine Learning in Science/Modules/COMP3009 Machine Learning/Submissions/Assignment 2/scaler.joblib')
+        X_norm = scaler.transform(X)
 
         return X_norm, id
 
